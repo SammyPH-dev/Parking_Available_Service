@@ -1,11 +1,9 @@
 from pathlib import Path
-
 from flask import Flask
-
 from app.extensions import db
+from app.routes import api
 
-
-def creer_application() -> Flask:
+def creer_application(configuration_test: dict | None = None) -> Flask:
     app = Flask(__name__)
 
     racine_projet = Path(__file__).resolve().parent.parent
@@ -21,9 +19,13 @@ def creer_application() -> Flask:
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    db.init_app(app)
+    #test optionnel (Ca va creer une db de test)
+    if configuration_test is not None:
+        app.config.update(
+            configuration_test
+        )
 
-    from app.routes import api
+    db.init_app(app)
 
     app.register_blueprint(
         api,

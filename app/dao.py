@@ -28,3 +28,26 @@ class PanneauDAO:
     #Supprimer un panneau
     def supprimer(self, panneau: Panneau) -> None:
         db.session.delete(panneau)
+
+    #Trouver les panneaux dans la zone
+    def trouver_dans_zone(
+            self,
+            latitude_min: float,
+            latitude_max: float,
+            longitude_min: float,
+            longitude_max: float,
+    ) -> list[Panneau]:
+        requete = select(Panneau).where(
+            Panneau.latitude.between(
+                latitude_min,
+                latitude_max,
+            ),
+            Panneau.longitude.between(
+                longitude_min,
+                longitude_max,
+            ),
+        )
+
+        return list(
+            db.session.scalars(requete)
+        )
