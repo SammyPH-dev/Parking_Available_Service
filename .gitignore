@@ -1,0 +1,30 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Output de test et couverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# environnement virtuel python
+.venv/
+venv/
+
+# configuration du IDE
+.idea/
+
+# macOS
+.DS_Store
+
+# configuration de la variable d'environnement local
+.env
+
+# les fichier db
+data/*.db
+data/*.db-journal
+data/*.sqlite
+data/*.sqlite3
+
+# db
+data/raw/
