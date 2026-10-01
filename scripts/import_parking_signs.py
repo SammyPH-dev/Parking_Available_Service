@@ -1,17 +1,24 @@
+import argparse
 import json
 import sys
 from pathlib import Path
 from typing import Any
+
+
+RACINE_PROJET = (
+    Path(__file__).resolve().parent.parent
+)
+
+if str(RACINE_PROJET) not in sys.path:
+    sys.path.insert(
+        0,
+        str(RACINE_PROJET),
+    )
+
+
 from app import creer_application
 from app.extensions import db
 from app.models import Panneau
-
-
-RACINE_PROJET = Path(__file__).resolve().parent.parent
-
-#Pour eviter le ModuleNotFoundError
-if str(RACINE_PROJET) not in sys.path:
-    sys.path.insert(0, str(RACINE_PROJET))
 
 
 CHEMIN_GEOJSON = (
@@ -59,7 +66,7 @@ def normaliser_feature(
     }
 
 
-def importer(limite: int = 500) -> tuple[int, int]:
+def importer(limite: int | None= 500) -> tuple[int, int, int]:
     with CHEMIN_GEOJSON.open(
         encoding="utf-8"
     ) as fichier:
@@ -67,13 +74,26 @@ def importer(limite: int = 500) -> tuple[int, int]:
 
     application = creer_application()
 
+    identifiants_importes = set()
+    nombre_doublons = 0
     nombre_importe = 0
     nombre_ignore = 0
 
     with application.app_context():
-        for feature in donnees["features"][:limite]:
-            donnees_panneau = normaliser_feature(
-                feature
+        features = donnees["features"]
+
+        if limite is not None:
+            features = features[:limite]
+
+        for feature in features:
+            donnees_panneau = normaliser_feature(feature)
+            identifiant = donnees_panneau["id"]
+
+            if identifiant in identifiants_importes:
+                nombre_doublons += 1
+
+            identifiants_importes.add(
+                identifiant
             )
 
             if donnees_panneau is None:
@@ -108,14 +128,67 @@ def importer(limite: int = 500) -> tuple[int, int]:
             db.session.rollback()
             raise
 
-    return nombre_importe, nombre_ignore
+    return (
+        len(identifiants_importes),
+        nombre_ignore,
+        nombre_doublons,
+    )
 
 
 def main() -> None:
-    nombre_importe, nombre_ignore = importer()
+    parseur = argparse.ArgumentParser(
+        description=(
+            "Importe les panneaux de stationnement "
+            "dans la base de données."
+        )
+    )
 
-    print("Panneaux importés:", nombre_importe)
-    print("Panneaux ignorés:", nombre_ignore)
+    groupe = parseur.add_mutually_exclusive_group()
+
+    groupe.add_argument(
+        "--limite",
+        type=int,
+        default=500,
+        help=(
+            "Nombre maximal de features à importer. "
+            "La valeur par défaut est 500."
+        ),
+    )
+
+    groupe.add_argument(
+        "--tout",
+        action="store_true",
+        help="Importe le fichier GeoJSON complet.",
+    )
+
+    arguments = parseur.parse_args()
+
+    limite = (
+        None
+        if arguments.tout
+        else arguments.limite
+    )
+
+    (
+        nombre_unique,
+        nombre_ignore,
+        nombre_doublons,
+    ) = importer(
+        limite=limite
+    )
+
+    print(
+        "Panneaux uniques importés ou mis à jour:",
+        nombre_unique,
+    )
+    print(
+        "Features dupliquées:",
+        nombre_doublons,
+    )
+    print(
+        "Features ignorées:",
+        nombre_ignore,
+    )
 
 
 if __name__ == "__main__":

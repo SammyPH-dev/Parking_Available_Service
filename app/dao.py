@@ -51,3 +51,18 @@ class PanneauDAO:
         return list(
             db.session.scalars(requete)
         )
+
+    #Lister tout les panneaux par poteaux
+    def lister_par_poteau(
+            self,
+            poteau_id: int,
+    ) -> list[Panneau]:
+        requete = (
+            select(Panneau)
+            .where(Panneau.poteau_id == poteau_id)
+            .order_by(Panneau.id)
+        )
+
+        return list(
+            db.session.scalars(requete)
+        )
