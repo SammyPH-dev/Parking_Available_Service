@@ -1,35 +1,45 @@
-from pathlib import Path
 from flask import Flask
-from app.extensions import db
-from app.routes import api
 
-def creer_application(configuration_test: dict | None = None) -> Flask:
+from app.api import enregistrer_api
+from app.config import (
+    Configuration,
+    DOSSIER_DONNEES,
+)
+from app.extensions import db
+
+
+def creer_application(
+    configuration_test: dict | None = None,
+) -> Flask:
     app = Flask(__name__)
 
-    racine_projet = Path(__file__).resolve().parent.parent
-    chemin_bd = racine_projet / "data" / "parking.db"
-
-    chemin_bd.parent.mkdir(
-        parents=True,
-        exist_ok=True,
+    app.config.from_object(
+        Configuration
     )
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = (
-        f"sqlite:///{chemin_bd}"
-    )
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    #test optionnel (Ca va creer une db de test)
     if configuration_test is not None:
         app.config.update(
             configuration_test
         )
 
+    DOSSIER_DONNEES.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     db.init_app(app)
 
-    app.register_blueprint(
-        api,
-        url_prefix="/api",
+    from app.conteneur import (
+        creer_services_application,
+    )
+
+    app.extensions[
+        "services_application"
+    ] = creer_services_application()
+
+    enregistrer_api(
+        app,
+        prefixe=app.config["API_PREFIXE"],
     )
 
     with app.app_context():

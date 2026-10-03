@@ -25,3 +25,16 @@ def application():
 @pytest.fixture
 def client(application):
     return application.test_client()
+
+@pytest.fixture
+def url_api(application):
+    def construire_url(
+        chemin: str,
+    ) -> str:
+        prefixe = application.config[
+            "API_PREFIXE"
+        ]
+
+        return f"{prefixe}{chemin}"
+
+    return construire_url

@@ -1,18 +1,17 @@
 from app.extensions import db
 from app.models import Panneau
 
-
-def test_sante(client):
+def test_sante(client, url_api):
     reponse = client.get(
-        "/api/sante"
+        url_api("/sante")
     )
 
     assert reponse.status_code == 200
 
 
-def test_coordonnees_obligatoires(client):
+def test_coordonnees_obligatoires(client, url_api):
     reponse = client.get(
-        "/api/panneaux/proches"
+        url_api("/panneaux/proches")
     )
 
     assert reponse.status_code == 400
@@ -25,11 +24,11 @@ def test_coordonnees_obligatoires(client):
     )
 
 
-def test_latitude_invalide(client):
+def test_latitude_invalide(client, url_api):
     reponse = client.get(
-        "/api/panneaux/proches"
+        url_api("/panneaux/proches"
         "?latitude=100"
-        "&longitude=-73.5674"
+        "&longitude=-73.5674")
     )
 
     assert reponse.status_code == 422
@@ -38,6 +37,7 @@ def test_latitude_invalide(client):
 def test_recherche_panneau_proche(
     client,
     application,
+    url_api
 ):
     with application.app_context():
         panneau_proche = Panneau(
@@ -67,11 +67,11 @@ def test_recherche_panneau_proche(
         db.session.commit()
 
     reponse = client.get(
-        "/api/panneaux/proches"
+        url_api("/panneaux/proches"
         "?latitude=45.5019"
         "&longitude=-73.5674"
         "&rayon=100"
-        "&limite=10"
+        "&limite=10")
     )
 
     assert reponse.status_code == 200
@@ -89,6 +89,7 @@ def test_recherche_panneau_proche(
 def test_evaluation_sans_date_utilise_heure_actuelle(
     client,
     application,
+    url_api
 ):
     with application.app_context():
         panneau = Panneau(
@@ -106,7 +107,7 @@ def test_evaluation_sans_date_utilise_heure_actuelle(
         identifiant = panneau.id
 
     reponse = client.get(
-        f"/api/panneaux/{identifiant}/evaluation"
+        url_api(f"/panneaux/{identifiant}/evaluation")
     )
 
     assert reponse.status_code == 200
@@ -120,10 +121,10 @@ def test_evaluation_sans_date_utilise_heure_actuelle(
     )
 
 
-def test_evaluation_date_heure_invalide(client):
+def test_evaluation_date_heure_invalide(client, url_api):
     reponse = client.get(
-        "/api/panneaux/67/evaluation"
-        "?date_heure=incorrect"
+        url_api("/panneaux/67/evaluation"
+        "?date_heure=incorrect")
     )
 
     assert reponse.status_code == 422
@@ -136,10 +137,10 @@ def test_evaluation_date_heure_invalide(client):
     )
 
 
-def test_evaluation_panneau_introuvable(client):
+def test_evaluation_panneau_introuvable(client, url_api):
     reponse = client.get(
-        "/api/panneaux/999999/evaluation"
-        "?date_heure=2026-10-07T14:00:00"
+        url_api("/panneaux/999999/evaluation"
+        "?date_heure=2026-10-07T14:00:00")
     )
 
     assert reponse.status_code == 404
@@ -154,6 +155,7 @@ def test_evaluation_panneau_introuvable(client):
 def test_evaluation_panneau_en_tout_temps(
     client,
     application,
+    url_api
 ):
     with application.app_context():
         panneau = Panneau(
@@ -171,8 +173,8 @@ def test_evaluation_panneau_en_tout_temps(
         identifiant = panneau.id
 
     reponse = client.get(
-        f"/api/panneaux/{identifiant}/evaluation"
-        "?date_heure=2026-10-07T14:00:00"
+        url_api(f"/panneaux/{identifiant}/evaluation"
+        "?date_heure=2026-10-07T14:00:00")
     )
 
     assert reponse.status_code == 200
@@ -196,10 +198,10 @@ def test_evaluation_panneau_en_tout_temps(
             ]
             is False
     )
-def test_evaluation_poteau_introuvable(client):
+def test_evaluation_poteau_introuvable(client, url_api):
     reponse = client.get(
-        "/api/poteaux/999999/evaluation"
-        "?date_heure=2026-10-07T09:00:00"
+        url_api("/poteaux/999999/evaluation"
+        "?date_heure=2026-10-07T09:00:00")
     )
 
     assert reponse.status_code == 404
@@ -215,6 +217,7 @@ def test_evaluation_poteau_introuvable(client):
 def test_evaluation_poteau_priorise_interdiction(
     client,
     application,
+    url_api
 ):
     with application.app_context():
         panneau_interdit = Panneau(
@@ -242,8 +245,8 @@ def test_evaluation_poteau_priorise_interdiction(
         db.session.commit()
 
     reponse = client.get(
-        "/api/poteaux/500/evaluation"
-        "?date_heure=2026-10-07T09:00:00"
+        url_api("/poteaux/500/evaluation"
+        "?date_heure=2026-10-07T09:00:00")
     )
 
     assert reponse.status_code == 200
@@ -268,6 +271,7 @@ def test_evaluation_poteau_priorise_interdiction(
 def test_recherche_poteaux_proches_evalues(
     client,
     application,
+    url_api
 ):
     with application.app_context():
         panneaux = [
@@ -293,12 +297,12 @@ def test_recherche_poteaux_proches_evalues(
         db.session.commit()
 
     reponse = client.get(
-        "/api/poteaux/proches"
+        url_api("/poteaux/proches"
         "?latitude=45.5019"
         "&longitude=-73.5674"
         "&date_heure=2026-10-07T09:00:00"
         "&rayon=300"
-        "&limite=10"
+        "&limite=10")
     )
 
     assert reponse.status_code == 200
@@ -322,6 +326,7 @@ def test_recherche_poteaux_proches_evalues(
 def test_date_utc_convertie_vers_montreal(
     client,
     application,
+    url_api
 ):
     with application.app_context():
         panneau = Panneau(
@@ -337,10 +342,10 @@ def test_date_utc_convertie_vers_montreal(
         db.session.commit()
 
     reponse = client.get(
-        "/api/poteaux/proches"
+        url_api("/poteaux/proches"
         "?latitude=45.5"
         "&longitude=-73.5"
-        "&date_heure=2026-10-07T18:00:00Z"
+        "&date_heure=2026-10-07T18:00:00Z")
     )
 
     assert reponse.status_code == 200
@@ -353,11 +358,11 @@ def test_date_utc_convertie_vers_montreal(
     )
 
 def test_recherche_poteaux_coordonnees_obligatoires(
-    client,
+    client, url_api
 ):
     reponse = client.get(
-        "/api/poteaux/proches"
-        "?date_heure=2026-10-07T09:00:00"
+        url_api("/poteaux/proches"
+        "?date_heure=2026-10-07T09:00:00")
     )
 
     assert reponse.status_code == 400
@@ -370,12 +375,12 @@ def test_recherche_poteaux_coordonnees_obligatoires(
     )
 
 def test_poteaux_proches_sans_date_utilise_heure_actuelle(
-    client,
+    client, url_api
 ):
     reponse = client.get(
-        "/api/poteaux/proches"
+        url_api("/poteaux/proches"
         "?latitude=45.5"
-        "&longitude=-73.5"
+        "&longitude=-73.5")
     )
 
     assert reponse.status_code == 200

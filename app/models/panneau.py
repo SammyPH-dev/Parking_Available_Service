@@ -4,6 +4,14 @@ from app.extensions import db
 class Panneau(db.Model):
     __tablename__ = "panneaux"
 
+    __table_args__ = (
+        db.Index(
+            "ix_panneaux_latitude_longitude",
+            "latitude",
+            "longitude",
+        ),
+    )
+
     id = db.Column(
         db.Integer,
         primary_key=True,
@@ -11,6 +19,7 @@ class Panneau(db.Model):
     poteau_id = db.Column(
         db.Integer,
         nullable=True,
+        index=True,
     )
     code = db.Column(
         db.String(30),
